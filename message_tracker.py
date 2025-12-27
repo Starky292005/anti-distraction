@@ -14,13 +14,18 @@ class MessageTracker:
         if os.path.exists(self.history_file):
             try:
                 with open(self.history_file, 'r') as f:
-                    data = json.load(f)
+                    content = f.read().strip()
+                    if not content:  # Empty file
+                        print("📝 Message history file is empty, starting fresh")
+                        return set()
+                    data = json.loads(content)
                     if isinstance(data, list):
                         return set(data)
                     else:
                         return set()
             except Exception as e:
                 print(f"❌ Error loading message history: {e}")
+                print("🔄 Creating fresh message history...")
                 return set()
         else:
             print("📝 No message history found. Starting fresh.")

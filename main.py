@@ -7,72 +7,56 @@ import os
 
 
 def main():
-    print("🚀 Anti-Distraction WhatsApp Filter")
-    print("📱 Monitoring for NEW important messages only")
-    print("💡 Make sure to keep the Chrome window open!\n")
+    print("🚀 ENHANCED WhatsApp Filter")
+    print("📱 Now enters chats to capture FULL message content!")
+    print("💡 Will detect ALL important messages, not just previews!\n")
 
     scraper = None
     try:
         scraper = WhatsAppScraper()
         analyzer = MessageAnalyzer()
-        tracker = MessageTracker()  # This should now persist between runs
+        tracker = MessageTracker()
 
-        check_count = 0
-        max_checks = 8
+        print("🔍 Scanning for unread chats...")
 
-        while check_count < max_checks:
-            check_count += 1
-            print(f"\n--- Check #{check_count} at {time.strftime('%H:%M:%S')} ---")
+        # NEW: Enter each unread chat and capture screenshots
+        screenshot_paths = scraper.capture_all_unread_chats()
 
-            print("📸 Taking screenshot...")
-            screenshot_path = scraper.take_screenshot()
+        if not screenshot_paths:
+            print("🎉 No unread chats found! You're all caught up.")
+            return
 
-            if screenshot_path and os.path.exists(screenshot_path):
-                print("🤖 Analyzing with Gemini AI...")
+        all_important_messages = []
+
+        # Analyze each chat screenshot
+        for screenshot_path in screenshot_paths:
+            if os.path.exists(screenshot_path):
+                print(f"🤖 Analyzing chat: {screenshot_path}")
                 result = analyzer.analyze_screenshot(screenshot_path)
 
                 important_messages = result.get("important_messages", [])
                 new_messages = tracker.filter_new_messages(important_messages)
-
-                if new_messages:
-                    print(f"\n🚨 NEW IMPORTANT MESSAGES FOUND: {len(new_messages)}")
-                    print("=" * 60)
-                    for i, msg in enumerate(new_messages, 1):
-                        print(f"\n{i}. 📨 From: {msg.get('sender', 'Unknown')}")
-                        print(f"   💬 Message: {msg.get('message', 'No content')}")
-                        print(f"   📋 Reason: {msg.get('reason', 'Not specified')}")
-                    print("=" * 60)
-
-                    print("✅ New important messages found! Stopping...")
-
-                    # Clean up
-                    try:
-                        os.remove(screenshot_path)
-                    except:
-                        pass
-
-                    break
-                else:
-                    if important_messages:
-                        print("📝 All important messages were already seen previously.")
-                    else:
-                        print("✅ No important messages found. You can focus!")
+                all_important_messages.extend(new_messages)
 
                 # Clean up screenshot
                 try:
                     os.remove(screenshot_path)
-                    print("🗑️ Cleaned up screenshot")
+                    print(f"🗑️ Cleaned up: {screenshot_path}")
                 except:
                     pass
-            else:
-                print("❌ Failed to take screenshot")
 
-            if check_count < max_checks:
-                print(f"⏰ Waiting {SCREENSHOT_INTERVAL} seconds...")
-                time.sleep(SCREENSHOT_INTERVAL)
-            else:
-                print("📊 Reached check limit. Stopping...")
-                break
+        # Show all results
+        if all_important_messages:
+            print(f"\n🚨 IMPORTANT MESSAGES FOUND: {len(all_important_messages)}")
+            print("=" * 60)
+            for i, msg in enumerate(all_important_messages, 1):
+                print(f"\n{i}. 📨 From: {msg.get('sender', 'Unknown')}")
+                print(f"   💬 Message: {msg.get('message', 'No content')}")
+                print(f"   📋 Reason: {msg.get('reason', 'Not specified')}")
+            print("=" * 60)
+            print("✅ Scan complete! Found ALL important messages from full chat history.")
+        else:
+            print("✅ No important messages found in any unread chats.")
 
     except KeyboardInterrupt:
         print("\n🛑 Stopped by user")
